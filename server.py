@@ -40,6 +40,22 @@ def generate():
     save_keys(keys)
     return jsonify({"key": key, "expiry": expiry, "message": f"Key valid for {days} days"})
 
+# ═══════════════════════════════════════
+#  ДОБАВЛЕНИЕ КЛЮЧА ВРУЧНУЮ
+# ═══════════════════════════════════════
+@app.route('/addkey', methods=['GET'])
+def addkey():
+    password = request.args.get('password', '')
+    if password != SECRET_PASSWORD:
+        return jsonify({"error": "Invalid password"}), 403
+    
+    key = "TOOL-FD0LQ9BZC6AK84H4"
+    expiry = (datetime.now() + timedelta(days=30)).isoformat()
+    keys = load_keys()
+    keys[key] = {"expiry": expiry, "active": True}
+    save_keys(keys)
+    return jsonify({"message": "Key added", "key": key, "expiry": expiry})
+
 @app.route('/check', methods=['GET'])
 def check():
     key = request.args.get('key')
