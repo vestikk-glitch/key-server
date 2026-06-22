@@ -19,8 +19,8 @@ def save_keys(keys):
         json.dump(keys, f, indent=4)
 
 def generate_key():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
-
+    return 'TOOL-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+    
 @app.route('/generate', methods=['GET'])
 def generate():
     days = int(request.args.get('days', 30))
