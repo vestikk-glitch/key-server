@@ -8,6 +8,9 @@ import os
 app = Flask(__name__)
 KEYS_FILE = "keys.json"
 
+# Твой секретный пароль (замени на свой)
+SECRET_PASSWORD = "1337"
+
 def load_keys():
     if os.path.exists(KEYS_FILE):
         with open(KEYS_FILE, "r") as f:
@@ -20,9 +23,15 @@ def save_keys(keys):
 
 def generate_key():
     return 'TOOL-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
-    
+
 @app.route('/generate', methods=['GET'])
 def generate():
+    password = request.args.get('password', '')
+    
+    # Проверяем пароль
+    if password != SECRET_PASSWORD:
+        return jsonify({"error": "Invalid password"}), 403
+    
     days = int(request.args.get('days', 30))
     key = generate_key()
     expiry = (datetime.now() + timedelta(days=days)).isoformat()
