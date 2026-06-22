@@ -25,6 +25,13 @@ def generate_key():
     return 'TOOL-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
 
 # ═══════════════════════════════════════
+#  ПИНГ (ЧТОБЫ СЕРВЕР НЕ ЗАСЫПАЛ)
+# ═══════════════════════════════════════
+@app.route('/ping', methods=['GET'])
+def ping():
+    return jsonify({"status": "alive", "time": datetime.now().isoformat()})
+
+# ═══════════════════════════════════════
 #  ГЕНЕРАЦИЯ КЛЮЧА
 # ═══════════════════════════════════════
 @app.route('/generate', methods=['GET'])
@@ -89,7 +96,6 @@ def check():
     
     # Проверка HWID
     if key_data["hwid"] is None:
-        # Первая активация — привязываем ключ к устройству
         key_data["hwid"] = hwid
         keys[key] = key_data
         save_keys(keys)
