@@ -8,7 +8,7 @@ import os
 app = Flask(__name__)
 KEYS_FILE = "keys.json"
 
-# Твой секретный пароль (замени на свой)
+# Твой секретный пароль
 SECRET_PASSWORD = "1337"
 
 def load_keys():
@@ -32,7 +32,7 @@ def ping():
     return jsonify({"status": "alive", "time": datetime.now().isoformat()})
 
 # ═══════════════════════════════════════
-#  ГЕНЕРАЦИЯ КЛЮЧА
+#  ГЕНЕРАЦИЯ КЛЮЧА (ПОДДЕРЖИВАЕТ ЧАСЫ!)
 # ═══════════════════════════════════════
 @app.route('/generate', methods=['GET'])
 def generate():
@@ -40,13 +40,23 @@ def generate():
     if password != SECRET_PASSWORD:
         return jsonify({"error": "Invalid password"}), 403
     
-    days = int(request.args.get('days', 30))
+    # ⚡ ТЕПЕРЬ ПОДДЕРЖИВАЕТ ДРОБНЫЕ ЧИСЛА (0.125 = 3 часа)
+    days = float(request.args.get('days', 30))
+    
     key = generate_key()
     expiry = (datetime.now() + timedelta(days=days)).isoformat()
     keys = load_keys()
     keys[key] = {"expiry": expiry, "active": True, "hwid": None}
     save_keys(keys)
-    return jsonify({"key": key, "expiry": expiry, "message": f"Key valid for {days} days"})
+    
+    # Переводим дни в часы для понятного сообщения
+    if days < 1:
+        hours = int(days * 24)
+        message = f"Key valid for {hours} hours"
+    else:
+        message = f"Key valid for {int(days)} days"
+    
+    return jsonify({"key": key, "expiry": expiry, "message": message})
 
 # ═══════════════════════════════════════
 #  ДОБАВЛЕНИЕ КЛЮЧА ВРУЧНУЮ
@@ -58,7 +68,7 @@ def addkey():
         return jsonify({"error": "Invalid password"}), 403
     
     key = request.args.get('key', '')
-    days = int(request.args.get('days', 30))
+    days = float(request.args.get('days', 30))
     
     if not key:
         return jsonify({"error": "Key parameter required"}), 400
@@ -71,10 +81,17 @@ def addkey():
     
     keys[key] = {"expiry": expiry, "active": True, "hwid": None}
     save_keys(keys)
-    return jsonify({"message": "Key added", "key": key, "expiry": expiry})
+    
+    if days < 1:
+        hours = int(days * 24)
+        message = f"Key added for {hours} hours"
+    else:
+        message = f"Key added for {int(days)} days"
+    
+    return jsonify({"message": message, "key": key, "expiry": expiry})
 
 # ═══════════════════════════════════════
-#  АКТИВАЦИЯ КЛЮЧА (HWID)
+#  ПРОВЕРКА КЛЮЧА (HWID)
 # ═══════════════════════════════════════
 @app.route('/check', methods=['GET'])
 def check():
@@ -134,7 +151,7 @@ def extend():
         return jsonify({"error": "Invalid password"}), 403
     
     key = request.args.get('key', '')
-    days = int(request.args.get('days', 3))
+    days = float(request.args.get('days', 3))
     
     keys = load_keys()
     if key not in keys:
@@ -145,8 +162,14 @@ def extend():
     keys[key]["active"] = True
     save_keys(keys)
     
+    if days < 1:
+        hours = int(days * 24)
+        message = f"Key extended by {hours} hours"
+    else:
+        message = f"Key extended by {int(days)} days"
+    
     return jsonify({
-        "message": f"Key extended by {days} days",
+        "message": message,
         "key": key,
         "new_expiry": new_expiry
     })
